@@ -12,8 +12,12 @@
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
 
+  <!-- Material Symbols Outlined Icon Font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+
   <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; }
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     
     #style-switcher {
@@ -21,14 +25,84 @@
       top: 10px;
       right: 10px;
       z-index: 1000;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 8px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 160px;
+    }
+
+    /* 選單頭部樣式 */
+    #switcher-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    #switcher-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+    #switcher-toggle-icon {
+      /* Material Icons 預設設定，可根據需要調整 */
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; 
+      font-size: 24px; /* 圖示大小 */
+      color: #555;
+      transition: transform 0.2s ease-in-out;
+
+      /* 新增的固定大小和居中對齊，避免文字載入時變形 */
+      display: inline-flex; /* 使其成為彈性容器 */
+      align-items: center;   /* 垂直居中內容 */
+      justify-content: center; /* 水平居中內容 */
+      width: 24px;   /* 固定寬度，與 font-size 相同或稍大 */
+      height: 24px;  /* 固定高度，與 font-size 相同或稍大 */
+      flex-shrink: 0; /* 防止在 Flex 容器中被縮小 */
+    }
+    #style-switcher.collapsed #switcher-toggle-icon {
+      transform: rotate(180deg); /* 收合時向上旋轉 180 度 */
+    }
+
+    /* 選單內容可收合 */
+    #switcher-content {
+      max-height: 500px; /* 預設最大高度 */
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+      opacity: 1;
+    }
+    #style-switcher.collapsed #switcher-content {
+      max-height: 0;
+      opacity: 0;
+      padding: 0; /* 收合時移除內邊距 */
+      margin: 0; /* 收合時移除外邊距 */
+    }
+
+
+    .style-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
     }
+    .style-group:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .group-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 4px;
+      padding: 0 5px;
+    }
+
     #style-switcher button {
       margin: 0;
       padding: 8px 15px;
@@ -36,38 +110,66 @@
       border: 1px solid #dcdcdc;
       background-color: #f8f8f8;
       color: #333;
-      border-radius: 5px;
+      border-radius: 6px;
       font-size: 14px;
       transition: all 0.2s ease-in-out;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       position: relative;
     }
     #style-switcher button:hover {
       background-color: #e6e6e6;
       border-color: #b0b0b0;
+      transform: translateY(-1px);
     }
     #style-switcher button.active {
       background-color: #007bff;
       color: white;
       border-color: #007bff;
-      box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
+      transform: translateY(0);
     }
 
-    .realtime-badge {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background-color: #28a745;
-      color: white;
+    /* 特定標籤樣式 */
+    .map-tag {
       font-size: 10px;
       padding: 2px 6px;
-      border-radius: 5px;
+      border-radius: 4px;
       line-height: 1;
       font-weight: bold;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      margin-left: 10px;
+      color: white;
     }
+    .tag-optimized {
+      background-color: #17a2b8; /* 清新的藍綠色 */
+    }
+    #style-switcher button.active .tag-optimized {
+      background-color: #0d6efd; /* 選中時稍微深一點，保持與白色文字對比 */
+    }
+
+
+    .tag-original {
+      background-color: #6c757d; /* 灰色 */
+    }
+    #style-switcher button.active .tag-original {
+      background-color: #495057; /* 選中時稍微深一點 */
+    }
+
+    .tag-osm-realtime { /* OSM + 即時更新 */
+      background-color: #28a745; /* 綠色 */
+    }
+    #style-switcher button.active .tag-osm-realtime {
+      background-color: #198754; /* 選中時稍微深一點 */
+    }
+
+    .tag-3d {
+        background-color: #8c52ff; /* 紫色 */
+    }
+    #style-switcher button.active .tag-3d {
+      background-color: #6f42c1; /* 選中時稍微深一點 */
+    }
+
 
     /* 載入指示器 */
     #loading-indicator {
@@ -80,8 +182,13 @@
       padding: 15px 25px;
       border-radius: 8px;
       z-index: 2000;
-      display: none; /* 預設隱藏 */
+      display: none;
       font-size: 16px;
+      animation: fadeinout 1.5s infinite;
+    }
+    @keyframes fadeinout {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
     }
   </style>
 </head>
@@ -89,12 +196,29 @@
 
 <div id="map"></div>
 <div id="style-switcher">
-  <button id="shortbread">Shortbread <span class="realtime-badge">即時更新</span></button>
-  <button id="colorful">Colorful <span class="realtime-badge">即時更新</span></button>
-  <button id="positron">Positron</button>
-  <button id="bright">Bright</button>
-  <button id="liberty">Liberty</button>
-  <button id="3d">3D</button>
+  <div id="switcher-header">
+    <h3>地圖樣式</h3>
+    <span id="switcher-toggle-icon" class="material-symbols-outlined">
+      keyboard_arrow_down
+    </span>
+  </div>
+
+  <div id="switcher-content">
+    <div class="style-group">
+      <div class="group-title">即時更新</div>
+      <button id="shortbread">Shortbread <span class="map-tag tag-optimized">優化</span></button>
+      <button id="colorful">Colorful <span class="map-tag tag-original">原始</span></button>
+      <button id="osm">OpenStreetMap <span class="map-tag tag-osm-realtime">OSM</span></button>
+    </div>
+
+    <div class="style-group">
+      <div class="group-title">OpenFreeMap</div>
+      <button id="positron">Positron</button>
+      <button id="bright">Bright</button>
+      <button id="liberty">Liberty</button>
+      <button id="3d">3D <span class="map-tag tag-3d">3D</span></button>
+    </div>
+  </div>
 </div>
 <div id="loading-indicator">載入中...</div>
 
@@ -106,26 +230,28 @@
     liberty: 'https://tiles.openfreemap.org/styles/liberty',
     positron: 'https://tiles.openfreemap.org/styles/positron',
     bright: 'https://tiles.openfreemap.org/styles/bright',
-    '3d': 'https://tiles.openfreemap.org/styles/liberty' // 3D 模式使用 Liberty 風格
+    '3d': 'https://tiles.openfreemap.org/styles/liberty'
   };
 
   let map;
   let maplibreGLLayer;
-  const cachedStyles = {}; // 用於儲存預先下載的樣式 JSON
+  let osmTileLayer;    
+
+  const cachedStyles = {};
 
   const loadingIndicator = document.getElementById('loading-indicator');
+  const styleSwitcher = document.getElementById('style-switcher');
+  const switcherHeader = document.getElementById('switcher-header');
+  const switcherContent = document.getElementById('switcher-content');
 
-  // 顯示載入指示器
   function showLoading() {
     loadingIndicator.style.display = 'block';
   }
 
-  // 隱藏載入指示器
   function hideLoading() {
     loadingIndicator.style.display = 'none';
   }
 
-  // 預處理樣式（修改 text-field）
   function preprocessStyle(style) {
     for (const layer of style.layers) {
       if (layer.layout && layer.layout['text-field']) {
@@ -141,48 +267,60 @@
     return style;
   }
 
-  // 預先下載所有樣式 JSON
   async function preloadAllStyles() {
-    const promises = Object.keys(styleUrls).map(async (key) => {
+    const promises = Object.keys(styleUrls)
+      .map(async (key) => {
       try {
         const response = await fetch(styleUrls[key]);
         const style = await response.json();
-        cachedStyles[key] = preprocessStyle(style); // 預處理並快取
+        cachedStyles[key] = preprocessStyle(style);
       } catch (error) {
         console.error(`Error preloading style ${key}:`, error);
       }
     });
     await Promise.all(promises);
-    console.log('All styles preloaded:', Object.keys(cachedStyles));
+    console.log('All Maplibre GL styles preloaded:', Object.keys(cachedStyles));
   }
 
-  // 切換樣式的函式
-  async function switchStyle(styleKey, buttonId) {
-    showLoading(); // 顯示載入指示器
+  async function switchMapLayer(layerType, styleKey, buttonId) {
+    showLoading();
 
-    let styleToApply = cachedStyles[styleKey];
-
-    // 如果樣式沒有被預載，或者樣式是即時更新（可能需要重新獲取）
-    // 目前的 "即時更新" 樣式只是標籤，其URL也是固定的，所以這裡不需要特別處理
-    // 如果未來 "即時更新" 樣式真的需要每次都從伺服器獲取最新內容，則需在這裡重新 fetch
-    if (!styleToApply) {
-      console.warn(`Style ${styleKey} not preloaded, fetching it now.`);
-      try {
-        const response = await fetch(styleUrls[styleKey]);
-        const style = await response.json();
-        styleToApply = preprocessStyle(style);
-        cachedStyles[styleKey] = styleToApply; // 快取新獲取的樣式
-      } catch (error) {
-        console.error(`Error fetching style ${styleKey}:`, error);
-        hideLoading();
-        return;
-      }
+    if (maplibreGLLayer) {
+      map.removeLayer(maplibreGLLayer);
+      maplibreGLLayer = null;
+    }
+    if (osmTileLayer) {
+      map.removeLayer(osmTileLayer);
+      osmTileLayer = null;
     }
 
-    // 應用樣式
-    if (maplibreGLLayer) {
-      maplibreGLLayer.getMaplibreMap().setStyle(styleToApply);
-    } else {
+    if (layerType === 'osm') {
+      osmTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      setTimeout(() => {
+        hideLoading();
+      }, 500);
+    } 
+    else {
+      let styleToApply = cachedStyles[styleKey];
+
+      if (!styleToApply) {
+        console.warn(`Style ${styleKey} not preloaded, fetching it now.`);
+        try {
+          const response = await fetch(styleUrls[styleKey]);
+          const style = await response.json();
+          styleToApply = preprocessStyle(style);
+          cachedStyles[styleKey] = styleToApply;
+        } catch (error) {
+          console.error(`Error fetching style ${styleKey}:`, error);
+          hideLoading();
+          return;
+        }
+      }
+
       maplibreGLLayer = L.maplibreGL({
         style: styleToApply,
         maplibreGLOptions: {
@@ -190,29 +328,12 @@
         }
       }).addTo(map);
 
-      // 監聽 maplibre 地圖的 'idle' 事件，表示地圖已完成渲染
-      maplibreGLLayer.getMaplibreMap().on('idle', () => {
-        hideLoading();
-      });
+      maplibreGLLayer.getMaplibreMap().once('idle', hideLoading);
     }
 
-    // 確保在設置樣式後再隱藏 loading，以應對沒有 'idle' 事件的情況
-    // 如果 maplibreGLLayer 已經存在，setStyle 不會觸發新的 'idle' 事件
-    if (maplibreGLLayer && maplibreGLLayer.getMaplibreMap().isLoaded()) {
-        hideLoading();
-    } else if (maplibreGLLayer) {
-        // 如果地圖還沒載入完成，就監聽一次 'idle' 事件
-        maplibreGLLayer.getMaplibreMap().once('idle', hideLoading);
-    } else {
-        // Fallback for initial load
-        hideLoading();
-    }
-
-    // 更新按鈕的 active 狀態
     updateActiveButton(buttonId);
   }
   
-  // 更新 active 按鈕的狀態
   function updateActiveButton(activeButtonId) {
     const buttons = document.querySelectorAll('#style-switcher button');
     buttons.forEach(button => {
@@ -224,78 +345,76 @@
     });
   }
 
-  // 重設視角為 2D 俯瞰的函式
   function resetPitch() {
-    if (!maplibreGLLayer) return; // 確保圖層已初始化
-    const maplibreMap = maplibreGLLayer.getMaplibreMap();
-    if (maplibreMap.getPitch() !== 0) {
-      maplibreMap.flyTo({ pitch: 0 });
+    if (maplibreGLLayer) {
+      const maplibreMap = maplibreGLLayer.getMaplibreMap();
+      if (maplibreMap.getPitch() !== 0) {
+        maplibreMap.flyTo({ pitch: 0 });
+      }
     }
   }
 
-  // 使用 async/await 語法來處理非同步的樣式載入和修改
   async function initializeMap() {
-    showLoading(); // 初始載入時顯示載入指示器
+    showLoading();
 
-    // --- 初始化地圖 ---
     map = L.map('map').setView([22.680947, 120.317491], 19);
 
-    // 預先載入所有樣式 JSON
     await preloadAllStyles();
 
-    // 初始載入 Shortbread 樣式
-    // 使用預載的樣式數據
     if (cachedStyles.shortbread) {
-      await switchStyle('shortbread', 'shortbread');
+      await switchMapLayer('maplibre', 'shortbread', 'shortbread');
     } else {
-      console.error("Shortbread style failed to preload!");
-      // Fallback: 直接從 URL 加載，但會慢一些
-      await switchStyle(styleUrls.shortbread, 'shortbread'); 
+      console.error("Shortbread style failed to preload! Falling back to direct fetch.");
+      await switchMapLayer('maplibre', 'shortbread', 'shortbread'); 
     }
     
-    // 在短暫延遲後，強制 Leaflet 重新計算地圖容器大小
     setTimeout(() => {
       map.invalidateSize();
-      hideLoading(); // 隱藏初始載入指示器
     }, 100);
   }
 
-  // 執行地圖初始化函式
   initializeMap();
   
-  // --- 為按鈕加上事件監聽器 ---
-
   document.getElementById('shortbread').addEventListener('click', () => {
-    switchStyle('shortbread', 'shortbread');
+    switchMapLayer('maplibre', 'shortbread', 'shortbread');
     resetPitch();
   });
 
   document.getElementById('colorful').addEventListener('click', () => {
-    switchStyle('colorful', 'colorful');
+    switchMapLayer('maplibre', 'colorful', 'colorful');
+    resetPitch();
+  });
+
+  document.getElementById('osm').addEventListener('click', () => {
+    switchMapLayer('osm', null, 'osm');
     resetPitch();
   });
 
   document.getElementById('positron').addEventListener('click', () => {
-    switchStyle('positron', 'positron');
+    switchMapLayer('maplibre', 'positron', 'positron');
     resetPitch();
   });
 
   document.getElementById('bright').addEventListener('click', () => {
-    switchStyle('bright', 'bright');
+    switchMapLayer('maplibre', 'bright', 'bright');
     resetPitch();
   });
 
   document.getElementById('liberty').addEventListener('click', () => {
-    switchStyle('liberty', 'liberty');
+    switchMapLayer('maplibre', 'liberty', 'liberty');
     resetPitch();
   });
 
   document.getElementById('3d').addEventListener('click', () => {
-      switchStyle('3d', '3d');
+      switchMapLayer('maplibre', '3d', '3d');
       const maplibreMap = maplibreGLLayer.getMaplibreMap();
       if (maplibreMap.getPitch() === 0) {
         maplibreMap.flyTo({pitch: 60, zoom: 17});
       }
+  });
+
+  switcherHeader.addEventListener('click', () => {
+    styleSwitcher.classList.toggle('collapsed');
   });
 
 </script>
