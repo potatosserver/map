@@ -41,7 +41,8 @@
 
 <div id="map"></div>
 <div id="style-switcher">
-  <button id="shortbread">Shortbread</button> <!-- 新增 Shortbread 按鈕 -->
+  <button id="shortbread">Shortbread</button>
+  <button id="colorful">Colorful</button>
   <button id="positron">Positron</button>
   <button id="bright">Bright</button>
   <button id="liberty">Liberty</button>
@@ -51,7 +52,8 @@
 <script>
   // 樣式檔 URL 列表
   const styleUrls = {
-    shortbread: 'https://potatosserver.github.io/map/shortbread.json', // 新增 Shortbread 樣式
+    shortbread: 'https://potatosserver.github.io/map/shortbread.json',
+    colorful: 'https://potatosserver.github.io/map/colorful.json',
     liberty: 'https://tiles.openfreemap.org/styles/liberty',
     positron: 'https://tiles.openfreemap.org/styles/positron',
     bright: 'https://tiles.openfreemap.org/styles/bright',
@@ -65,45 +67,6 @@
   async function switchStyle(styleUrl) {
     const response = await fetch(styleUrl);
     const style = await response.json();
-
-    // 取得樣式檔的來源網域，用於解析相對路徑
-    // 例如: "https://potatosserver.github.io"
-    const styleOrigin = new URL(styleUrl).origin; 
-
-    // 修正 glyphs 的相對路徑
-    if (style.glyphs && typeof style.glyphs === 'string' && style.glyphs.startsWith('/')) {
-      style.glyphs = styleOrigin + style.glyphs;
-    }
-
-    // 修正 sprite 的相對路徑（考慮到 sprite 可能是物件陣列或單一字串）
-    if (Array.isArray(style.sprite)) {
-      style.sprite = style.sprite.map(s => {
-        if (s.url && typeof s.url === 'string' && s.url.startsWith('/')) {
-          return { ...s, url: styleOrigin + s.url };
-        }
-        return s;
-      });
-    } else if (style.sprite && typeof style.sprite === 'string' && style.sprite.startsWith('/')) {
-      style.sprite = styleOrigin + style.sprite;
-    }
-
-    // 新增的修正：處理 sources 中的 tiles 絕對路徑
-    if (style.sources) {
-      for (const sourceId in style.sources) {
-        const source = style.sources[sourceId];
-        // 檢查是否為 vector 或 raster 類型的 source，且有 tiles 屬性
-        if ((source.type === 'vector' || source.type === 'raster') && source.tiles && Array.isArray(source.tiles)) {
-          source.tiles = source.tiles.map(tileUrl => {
-            if (typeof tileUrl === 'string' && tileUrl.startsWith('/')) {
-              // 將相對路徑轉換為絕對路徑
-              return styleOrigin + tileUrl;
-            }
-            return tileUrl;
-          });
-        }
-      }
-    }
-    // 結束新增的修正
 
     // 遍歷所有圖層，修改 text-field 規則，使其優先顯示中文
     for (const layer of style.layers) {
@@ -163,6 +126,12 @@
   // Shortbread 按鈕: 切換樣式並恢復視角
   document.getElementById('shortbread').addEventListener('click', () => {
     switchStyle(styleUrls.shortbread);
+    resetPitch();
+  });
+
+  // Colorful 按鈕: 切換樣式並恢復視角
+  document.getElementById('colorful').addEventListener('click', () => {
+    switchStyle(styleUrls.colorful);
     resetPitch();
   });
 
