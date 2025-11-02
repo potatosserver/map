@@ -16,7 +16,7 @@
 
 ## 🚀 如何使用
 
-1.  直接在網頁瀏覽器中開啟 `index (1).html` 檔案。
+1.  直接在網頁瀏覽器中開啟[演示網頁](https://potatosserver.github.io/map)。
 2.  地圖初始化後，預設載入 "Shortbread" 樣式。
 3.  點擊畫面右上角的「地圖樣式」選單來查看所有可用的樣式。
 4.  點擊任一樣式按鈕（例如 "Colorful", "OpenStreetMap", "3D"）即可切換至該地圖風格。
