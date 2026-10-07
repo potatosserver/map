@@ -1,0 +1,66 @@
+name: Build KMU PMTiles
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.pmtiles'
+      - 'README.md'
+  workflow_dispatch:
+    inputs:
+      bounds:
+        description: 'BBOX 範圍 (minLon,minLat,maxLon,maxLat)'
+        required: true
+        default: '120.300,22.640,120.320,22.660'
+
+jobs:
+  generate-pmtiles:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # 賦予自動 Commit Push 回儲存庫的權限
+
+    steps:
+      - name: 檢出儲存庫程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Java 21 環境
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 下載全台灣最新 OSM PBF 圖資 (Geofabrik)
+        run: |
+          wget -q https://download.geofabrik.de/asia/taiwan-latest.osm.pbf -O taiwan.osm.pbf
+
+      - name: 下載 Planetiler 建置工具
+        run: |
+          wget -q https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar -O planetiler.jar
+
+      - name: 執行 Planetiler 裁切並生成 PMTiles
+        run: |
+          # 取得傳入的 BBOX 參數，預設為高醫周邊
+          BOUNDS="${{ github.event.inputs.bounds || '120.300,22.640,120.320,22.660' }}"
+          
+          java -Xmx3g -jar planetiler.jar \
+            --osm-path=taiwan.osm.pbf \
+            --output=kmu.pmtiles \
+            --download-osm=false \
+            --bounds=$BOUNDS
+
+      - name: Commit 並 Push 圖磚至儲存庫
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add kmu.pmtiles
+          
+          # 檢查是否有檔案更新
+          if git diff --staged --quiet; then
+            echo "圖磚無變化，跳過 Commit"
+          else
+            git commit -m "chore: 自動更新高醫周邊 PMTiles 圖磚 [skip ci]"
+            git push
+          fi
