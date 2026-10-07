@@ -1,4 +1,4 @@
-name: Build KMU PMTiles
+name: Build KMU PMTiles (Centerline Merged)
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - '**.pmtiles'
       - 'README.md'
+      - '**.html'
   workflow_dispatch:
     inputs:
       bounds:
@@ -19,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  # 賦予自動 Commit Push 回儲存庫的權限
+      contents: write  # 允許 Actions 將產出的 PMTiles Commit 推回儲存庫
 
     steps:
       - name: 檢出儲存庫程式碼
@@ -35,32 +36,35 @@ jobs:
         run: |
           wget -q https://download.geofabrik.de/asia/taiwan-latest.osm.pbf -O taiwan.osm.pbf
 
-      - name: 下載 Planetiler 建置工具
+      - name: 下載 Planetiler 最新版建置工具
         run: |
           wget -q https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar -O planetiler.jar
 
-      - name: 執行 Planetiler 裁切並生成 PMTiles
+      - name: 執行 Planetiler（自動下載地貌 + 計算合併道路中心線）
         run: |
-          # 取得傳入的 BBOX 參數，預設為高醫周邊
+          # 取得經緯度範圍 (預設為高醫周邊)
           BOUNDS="${{ github.event.inputs.bounds || '120.300,22.640,120.320,22.660' }}"
           
+          # --download：自動下載缺失的湖泊/海洋輔助資料
+          # --transportation_name_limit_merge=true：強烈進行雙向道路名稱與幾何的聚合
           java -Xmx3g -jar planetiler.jar \
             --osm-path=taiwan.osm.pbf \
             --output=kmu.pmtiles \
-            --download-osm=false \
-            --bounds=$BOUNDS
+            --download \
+            --bounds=$BOUNDS \
+            --transportation_name_limit_merge=true \
+            --force
 
-      - name: Commit 並 Push 圖磚至儲存庫
+      - name: 將生成的 PMTiles 圖磚推送回儲存庫
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git add kmu.pmtiles
           
-          # 檢查是否有檔案更新
           if git diff --staged --quiet; then
-            echo "圖磚無變化，跳過 Commit"
+            echo "圖磚資料無變化，跳過 Commit"
           else
-            git commit -m "chore: 自動更新高醫周邊 PMTiles 圖磚 [skip ci]"
+            git commit -m "chore: 自動更新並計算高醫周邊中心線 PMTiles 圖磚 [skip ci]"
             git push
           fi
